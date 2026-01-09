@@ -1,0 +1,41 @@
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# API keys
+config.local.js
+secrets.json
+
+# Build outputs
+dist/
+build/
+.output/
+.vercel/
+.netlify/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Cache
+.cache/
+.parcel-cache/
+.wrangler/

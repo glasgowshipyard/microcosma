@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microcosma: ReTail Risk Hedgehog</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.bunny.net/css?family=jetbrains-mono:400,700" rel="stylesheet">
+    <script src="config.js"></script>
+    <style>
+        * {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        :root {
+            --bg-start: #fafafa;
+            --bg-end: #f5f5f5;
+            --text: #1a1a1a;
+            --text-muted: #666;
+            --border: #e0e0e0;
+            --card-bg: #ffffff;
+            --gradient-1: linear-gradient(135deg, #a78bfa 0%, #ec4899 100%);
+            --gradient-2: linear-gradient(135deg, #f472b6 0%, #fb923c 100%);
+            --gradient-3: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            --input-bg: #fafafa;
+            --shadow: rgba(0, 0, 0, 0.05);
+            --accent: #a78bfa;
+        }
+
+        [data-theme="dark"] {
+            --bg-start: #0a0a0a;
+            --bg-end: #1a1a1a;
+            --text: #e5e5e5;
+            --text-muted: #a0a0a0;
+            --border: #333;
+            --card-bg: #1f1f1f;
+            --input-bg: #2a2a2a;
+            --shadow: rgba(255, 255, 255, 0.03);
+        }
+
+        body {
+            background: linear-gradient(to bottom, var(--bg-start), var(--bg-end));
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px var(--shadow);
+        }
+
+        .gradient-text {
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .theme-toggle {
+            cursor: pointer;
+            font-size: 1.5rem;
+            transition: transform 0.2s;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        input[type="number"] {
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .btn {
+            background: var(--gradient-1);
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background: var(--gradient-2);
+        }
+
+        summary {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        summary:hover {
+            color: var(--text);
+        }
+    </style>
+</head>
+<body>
+    <div class="max-w-3xl mx-auto px-6 py-12">
+
+        <!-- Header -->
+        <header class="mb-16">
+            <div class="flex justify-between items-start mb-8">
+                <div>
+                    <h1 class="text-5xl font-bold mb-2">
+                        <span class="gradient-text">Microcosma</span>
+                    </h1>
+                    <p class="text-sm" style="color: var(--text-muted);">ReTail Risk Hedgehog 🦔</p>
+                </div>
+                <div class="theme-toggle" onclick="toggleTheme()">
+                    <span id="theme-icon">🌙</span>
+                </div>
+            </div>
+
+            <p style="color: var(--text-muted); line-height: 1.8; max-width: 60ch;">
+                A systematic tool for implementing a disciplined, retail-scale black swan insurance strategy.
+                Inspired by Taleb and Spitznagel. Continuously pay a small premium for deep OTM SPY puts.
+                Most years they expire worthless. When catastrophe strikes, maybe you offset some losses.
+            </p>
+        </header>
+
+        <!-- Market Data Card -->
+        <section class="card rounded-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold mb-6">Market Data</h2>
+
+            <div class="grid grid-cols-3 gap-4 mb-6">
+                <div>
+                    <div class="text-xs mb-2" style="color: var(--text-muted);">SPY Price</div>
+                    <div class="text-3xl font-bold" id="spy-price">--</div>
+                    <div class="text-xs mt-1" style="color: var(--text-muted);">Previous Close</div>
+                </div>
+                <div>
+                    <div class="text-xs mb-2" style="color: var(--text-muted);">VIX</div>
+                    <input
+                        type="number"
+                        id="vix-manual"
+                        value="16"
+                        step="0.1"
+                        class="text-3xl font-bold w-full rounded px-2 py-1"
+                        placeholder="16">
+                    <div class="text-xs mt-1" style="color: var(--text-muted);">Manual Entry</div>
+                </div>
+                <div>
+                    <div class="text-xs mb-2" style="color: var(--text-muted);">Budget Multiplier</div>
+                    <div class="text-3xl font-bold" id="vix-multiplier">--</div>
+                    <div class="text-xs mt-1" style="color: var(--text-muted);">VIX-Adjusted</div>
+                </div>
+            </div>
+
+            <p class="text-xs mb-4" style="color: var(--text-muted);">
+                Check current VIX at CBOE.com. Free tier = previous close for SPY.
+            </p>
+
+            <button onclick="refreshData()" class="btn text-white font-bold py-3 px-6 rounded-lg w-full mb-4">
+                Refresh SPY Data
+            </button>
+
+            <details class="text-sm">
+                <summary style="color: var(--text-muted);">Override SPY manually</summary>
+                <div class="mt-3">
+                    <input
+                        type="number"
+                        id="spy-manual"
+                        step="0.01"
+                        class="w-full rounded px-4 py-2"
+                        placeholder="Leave blank to use API data">
+                </div>
+            </details>
+        </section>
+
+        <!-- Calculator Card -->
+        <section class="card rounded-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold mb-6">Your Hedge</h2>
+
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm mb-2" style="color: var(--text-muted);">Portfolio Value ($)</label>
+                    <input
+                        type="number"
+                        id="portfolio-exposure"
+                        value="100000"
+                        class="w-full rounded px-4 py-3 text-lg font-bold">
+                </div>
+
+                <div>
+                    <label class="block text-sm mb-2" style="color: var(--text-muted);">Annual Budget for Insurance ($)</label>
+                    <input
+                        type="number"
+                        id="hedge-budget"
+                        value="1500"
+                        class="w-full rounded px-4 py-3 text-lg font-bold">
+                </div>
+
+                <div>
+                    <label class="block text-sm mb-2" style="color: var(--text-muted);">Buy Frequency</label>
+                    <select id="buy-frequency" class="w-full rounded px-4 py-3 text-lg font-bold" style="background: var(--input-bg); border: 1px solid var(--border); color: var(--text);">
+                        <option value="12">Monthly</option>
+                        <option value="4" selected>Quarterly</option>
+                        <option value="2">Semi-Annual</option>
+                        <option value="1">Annual</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm mb-2" style="color: var(--text-muted);">Strike Distance</label>
+                    <select id="strike-distance" class="w-full rounded px-4 py-3 text-lg font-bold" style="background: var(--input-bg); border: 1px solid var(--border); color: var(--text);">
+                        <option value="10">10% OTM</option>
+                        <option value="20">20% OTM</option>
+                        <option value="30" selected>30% OTM (Black Swan)</option>
+                        <option value="40">40% OTM (Deep OTM)</option>
+                        <option value="50">50% OTM (Extreme)</option>
+                    </select>
+                    <p class="text-xs mt-1" style="color: var(--text-muted);" id="strike-price-display">
+                        Strike: --
+                    </p>
+                </div>
+
+                <div>
+                    <label class="block text-sm mb-2" style="color: var(--text-muted);">Days to Expiration</label>
+                    <select id="days-to-expiration" class="w-full rounded px-4 py-3 text-lg font-bold" style="background: var(--input-bg); border: 1px solid var(--border); color: var(--text);">
+                        <option value="30">30 Days</option>
+                        <option value="60">60 Days</option>
+                        <option value="90" selected>90 Days</option>
+                        <option value="180">180 Days</option>
+                    </select>
+                </div>
+
+                <div class="card p-4" style="background: var(--input-bg);">
+                    <p class="text-xs mb-2" style="color: var(--text-muted);">
+                        Look up this contract on <a href="#" id="yahoo-link" target="_blank" class="underline" style="color: var(--accent);">Yahoo Finance</a>
+                    </p>
+                    <div class="text-sm font-bold mb-2" id="contract-description">--</div>
+                    <label class="block text-xs mb-1" style="color: var(--text-muted);">Ask Price (per contract)</label>
+                    <input
+                        type="number"
+                        id="put-premium"
+                        value="50"
+                        step="0.01"
+                        placeholder="Enter ask price from broker"
+                        class="w-full rounded px-3 py-2 text-base font-bold">
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Results Card -->
+        <section id="results" class="hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="card rounded-lg p-6">
+                    <h3 class="text-lg font-bold mb-4 gradient-text">Per Purchase</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <div class="text-xs" style="color: var(--text-muted);">Contracts to Buy</div>
+                            <div class="text-3xl font-bold" id="contracts-needed">--</div>
+                        </div>
+                        <div>
+                            <div class="text-xs" style="color: var(--text-muted);">Cost</div>
+                            <div class="text-3xl font-bold" id="total-capital">--</div>
+                        </div>
+                        <div>
+                            <div class="text-xs" style="color: var(--text-muted);">Budget Allocated</div>
+                            <div class="text-lg" id="adjusted-budget">--</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card rounded-lg p-6">
+                    <h3 class="text-lg font-bold mb-4 gradient-text">Annual Total</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <div class="text-xs" style="color: var(--text-muted);">Total Contracts</div>
+                            <div class="text-3xl font-bold" id="max-exposure">--</div>
+                        </div>
+                        <div>
+                            <div class="text-xs" style="color: var(--text-muted);">Total Annual Cost</div>
+                            <div class="text-3xl font-bold" id="contracts-affordable">--</div>
+                        </div>
+                        <div>
+                            <div class="text-xs" style="color: var(--text-muted);">Protection Level</div>
+                            <div class="text-lg" id="coverage-info">--</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card rounded-lg p-6">
+                <h3 class="text-lg font-bold mb-3">Summary</h3>
+                <div class="text-sm leading-relaxed" style="color: var(--text-muted);" id="explanation"></div>
+            </div>
+        </section>
+
+        <!-- Footer with Disclaimer -->
+        <footer class="mt-16 pt-8 border-t" style="border-color: var(--border);">
+            <details class="mb-8">
+                <summary class="text-lg font-bold mb-4" style="color: var(--text-muted);">
+                    Disclaimer: Read This Before You Wreck Yourself
+                </summary>
+                <div class="mt-4 space-y-4 text-sm leading-relaxed max-w-65ch" style="color: var(--text-muted);">
+                    <p>
+                        Options trading is dangerous. You can lose 100% of your premium. Deep OTM puts expire
+                        worthless more often than not. That is the point.
+                    </p>
+
+                    <p>
+                        This is insurance, not a get-rich-quick scheme. You pay a premium every year for protection
+                        you will probably never collect on. Like Taleb says: you look like an idiot for years
+                        until the day you look like a genius. Can you handle looking like an idiot?
+                    </p>
+
+                    <p>
+                        You need to understand convexity. You need to understand volatility. You need to understand
+                        that market makers are not your friends. You need to understand that liquidity can disappear
+                        faster than your unrealized gains in a crash.
+                    </p>
+
+                    <p>
+                        <strong>This tool does NOT:</strong> Place trades for you. Guarantee any returns.
+                        Constitute financial advice. Protect you from your own stupidity. Account for taxes,
+                        commissions, slippage, or the heat death of the universe.
+                    </p>
+
+                    <p>
+                        <strong>What this IS:</strong> A calculator for implementing a Taleb/Spitznagel-style
+                        tail hedge at retail scale. You set a budget. You buy disaster insurance. Most years
+                        it expires worthless. When the apocalypse comes, maybe you offset some losses.
+                    </p>
+
+                    <p>
+                        If you do not know what vega, skew, or gamma mean, you have no business trading options.
+                        Go read Spitznagel's <em>The Dao of Capital</em> and <em>Safe Haven</em> first.
+                        Seriously. Close this tab and go read.
+                    </p>
+
+                    <p>
+                        <strong>Final warning:</strong> This strategy can and will lead to total financial
+                        obliteration if you mess it up. Use at your own risk. We are not responsible for
+                        your losses, margin calls, or existential crises.
+                    </p>
+                </div>
+            </details>
+
+            <div class="text-center text-sm" style="color: var(--text-muted);">
+                <p class="mb-2">Built with conviction. Hedged with discipline. 🦔</p>
+                <p>Not financial advice. For educational purposes only.</p>
+                <p class="mt-4 text-xs">Last updated: <span id="last-updated">Never</span></p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Theme management
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            document.getElementById('theme-icon').textContent = newTheme === 'dark' ? '☀️' : '🌙';
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Initialize theme based on system preference or saved preference
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+            document.getElementById('theme-icon').textContent = theme === 'dark' ? '☀️' : '🌙';
+        }
+
+        // State
+        let marketData = {
+            spyPrice: null,
+            vix: null,
+            vixMultiplier: null,
+            lastUpdated: null
+        };
+
+        // VIX-Based Budget Adjustment
+        function calculateVixMultiplier(vix) {
+            if (vix < 20) return 1.0;
+            if (vix >= 20 && vix <= 30) return 0.75;
+            return 0.5;
+        }
+
+        // Fetch real market data from Massive API
+        async function fetchMarketData() {
+            try {
+                const spyResponse = await fetch(`${CONFIG.MASSIVE_BASE_URL}/v2/aggs/ticker/${CONFIG.SYMBOLS.SPY}/prev?adjusted=true&apiKey=${CONFIG.MASSIVE_API_KEY}`);
+
+                if (!spyResponse.ok) {
+                    const errorText = await spyResponse.text();
+                    throw new Error(`Failed to fetch SPY data: ${spyResponse.status}`);
+                }
+
+                const spyData = await spyResponse.json();
+                const spyPrice = spyData.results?.[0]?.c;
+
+                if (!spyPrice) {
+                    throw new Error('No SPY price data available');
+                }
+
+                const vixInput = document.getElementById('vix-manual');
+                const vixValue = parseFloat(vixInput.value) || 16;
+
+                return {
+                    spyPrice: spyPrice,
+                    vix: vixValue,
+                    vixMultiplier: calculateVixMultiplier(vixValue),
+                    lastUpdated: new Date()
+                };
+            } catch (error) {
+                console.error('Error fetching market data:', error);
+                alert(`Failed to fetch market data: ${error.message}\n\nPlease check your API key or enter data manually.`);
+
+                const vixInput = document.getElementById('vix-manual');
+                const spyInput = document.getElementById('spy-manual');
+
+                const vixValue = parseFloat(vixInput.value) || 16;
+                const spyPrice = parseFloat(spyInput.value) || 600;
+
+                return {
+                    spyPrice: spyPrice,
+                    vix: vixValue,
+                    vixMultiplier: calculateVixMultiplier(vixValue),
+                    lastUpdated: new Date()
+                };
+            }
+        }
+
+        // Update market data display
+        function updateMarketDataDisplay() {
+            if (!marketData.spyPrice) return;
+
+            const spyManualInput = document.getElementById('spy-manual');
+            const displayPrice = spyManualInput.value ? parseFloat(spyManualInput.value) : marketData.spyPrice;
+            document.getElementById('spy-price').textContent = `$${displayPrice.toFixed(2)}`;
+
+            const vixInput = document.getElementById('vix-manual');
+            const currentVix = parseFloat(vixInput.value) || marketData.vix;
+            const multiplier = calculateVixMultiplier(currentVix);
+
+            document.getElementById('vix-multiplier').textContent = `${(multiplier * 100).toFixed(0)}%`;
+            document.getElementById('last-updated').textContent = marketData.lastUpdated.toLocaleString();
+
+            updateStrikeDisplay();
+        }
+
+        // Update strike price display and Yahoo link
+        function updateStrikeDisplay() {
+            const spyManualInput = document.getElementById('spy-manual');
+            const spyPrice = spyManualInput.value ? parseFloat(spyManualInput.value) : marketData.spyPrice;
+
+            if (!spyPrice) return;
+
+            const strikeDistance = parseFloat(document.getElementById('strike-distance').value);
+            const daysToExp = document.getElementById('days-to-expiration').value;
+
+            const strikePrice = Math.floor(spyPrice * (1 - strikeDistance / 100));
+
+            // Calculate approximate expiration date
+            const today = new Date();
+            const expirationDate = new Date(today);
+            expirationDate.setDate(today.getDate() + parseInt(daysToExp));
+
+            // Format for display
+            const expirationString = expirationDate.toISOString().split('T')[0];
+
+            document.getElementById('strike-price-display').textContent = `Strike: $${strikePrice} (${strikeDistance}% below current)`;
+            document.getElementById('contract-description').textContent = `SPY ${expirationString} $${strikePrice}P`;
+
+            // Generate Yahoo Finance link
+            const yahooLink = `https://finance.yahoo.com/quote/SPY/options?date=${Math.floor(expirationDate.getTime() / 1000)}`;
+            document.getElementById('yahoo-link').href = yahooLink;
+        }
+
+        // Update VIX multiplier when VIX input changes
+        function updateVixMultiplier() {
+            const vixInput = document.getElementById('vix-manual');
+            const vixValue = parseFloat(vixInput.value);
+            if (vixValue && vixValue > 0) {
+                marketData.vix = vixValue;
+                marketData.vixMultiplier = calculateVixMultiplier(vixValue);
+                document.getElementById('vix-multiplier').textContent = `${(marketData.vixMultiplier * 100).toFixed(0)}%`;
+            }
+        }
+
+        // Core calculation: simplified
+        function calculateHedge(portfolio, annualBudget, buyFrequency, putPremium, vixMultiplier, strikeDistance) {
+            // Adjust budget based on VIX
+            const adjustedAnnualBudget = annualBudget * vixMultiplier;
+
+            // Budget per purchase
+            const budgetPerPurchase = adjustedAnnualBudget / buyFrequency;
+
+            // Contracts you can afford per purchase
+            const contractsPerPurchase = Math.floor(budgetPerPurchase / putPremium);
+
+            // Total annual contracts
+            const totalAnnualContracts = contractsPerPurchase * buyFrequency;
+
+            // Each contract represents 100 shares
+            const spyManualInput = document.getElementById('spy-manual');
+            const spyPrice = spyManualInput.value ? parseFloat(spyManualInput.value) : (marketData.spyPrice || 450);
+            const strikePrice = Math.floor(spyPrice * (1 - strikeDistance / 100));
+
+            // Protection provided (rough estimate)
+            // If SPY hits strike, payout = (strike - 0) * 100 * contracts (extreme case)
+            // More realistically, at the strike level, intrinsic value covers that level
+            const protectionPerContract = strikePrice * 100; // Rough max payout
+            const totalProtection = protectionPerContract * totalAnnualContracts;
+
+            // Cost per purchase
+            const costPerPurchase = contractsPerPurchase * putPremium;
+
+            return {
+                contractsPerPurchase,
+                costPerPurchase,
+                budgetPerPurchase,
+                adjustedAnnualBudget,
+                totalAnnualContracts,
+                totalAnnualCost: costPerPurchase * buyFrequency
+            };
+        }
+
+        // Calculate and display results (auto-updates)
+        function calculate() {
+            const portfolio = parseFloat(document.getElementById('portfolio-exposure').value);
+            const annualBudget = parseFloat(document.getElementById('hedge-budget').value);
+            const buyFrequency = parseFloat(document.getElementById('buy-frequency').value);
+            const strikeDistance = parseFloat(document.getElementById('strike-distance').value);
+            const putPremium = parseFloat(document.getElementById('put-premium').value);
+
+            if (!marketData.vix || !portfolio || !annualBudget || !buyFrequency || !strikeDistance || !putPremium) {
+                return;
+            }
+
+            const result = calculateHedge(portfolio, annualBudget, buyFrequency, putPremium, marketData.vixMultiplier, strikeDistance);
+
+            // Update results display
+            document.getElementById('contracts-needed').textContent = result.contractsPerPurchase;
+            document.getElementById('total-capital').textContent = `$${result.costPerPurchase.toFixed(2)}`;
+            document.getElementById('adjusted-budget').textContent = `$${result.budgetPerPurchase.toFixed(2)}`;
+
+            document.getElementById('max-exposure').textContent = result.totalAnnualContracts;
+            document.getElementById('contracts-affordable').textContent = `$${result.totalAnnualCost.toFixed(2)}`;
+            document.getElementById('coverage-info').textContent = `${strikeDistance}% OTM`;
+
+            const frequencyText = buyFrequency == 12 ? 'month' : buyFrequency == 4 ? 'quarter' : buyFrequency == 2 ? 'half-year' : 'year';
+
+            const explanation = `
+                Based on your $${annualBudget.toLocaleString()} annual budget (VIX-adjusted to $${result.adjustedAnnualBudget.toFixed(2)}),
+                buying ${buyFrequency}x per year:
+                <br><br>
+                <strong>Per Purchase:</strong><br>
+                Buy ${result.contractsPerPurchase} contracts at $${putPremium} each = $${result.costPerPurchase.toFixed(2)} per ${frequencyText}.
+                <br><br>
+                <strong>Annually:</strong><br>
+                Total ${result.totalAnnualContracts} contracts, costing $${result.totalAnnualCost.toFixed(2)}/year.
+                <br><br>
+                ${result.totalAnnualCost > result.adjustedAnnualBudget
+                    ? `<span style="color: #f59e0b;">Warning: You're over budget by $${(result.totalAnnualCost - result.adjustedAnnualBudget).toFixed(2)}. Reduce buy frequency or pick cheaper contracts.</span>`
+                    : `You're within budget. Remaining: $${(result.adjustedAnnualBudget - result.totalAnnualCost).toFixed(2)}.`
+                }
+            `;
+
+            document.getElementById('explanation').innerHTML = explanation;
+            document.getElementById('results').classList.remove('hidden');
+        }
+
+        // Refresh data
+        async function refreshData() {
+            marketData = await fetchMarketData();
+            updateMarketDataDisplay();
+        }
+
+        // Event listeners
+        document.getElementById('vix-manual').addEventListener('input', () => {
+            updateVixMultiplier();
+            calculate();
+        });
+        document.getElementById('spy-manual').addEventListener('input', () => {
+            updateMarketDataDisplay();
+            calculate();
+        });
+
+        // Auto-calculate on any input change
+        document.getElementById('portfolio-exposure').addEventListener('input', calculate);
+        document.getElementById('hedge-budget').addEventListener('input', calculate);
+        document.getElementById('buy-frequency').addEventListener('change', calculate);
+        document.getElementById('strike-distance').addEventListener('change', () => {
+            updateStrikeDisplay();
+            calculate();
+        });
+        document.getElementById('days-to-expiration').addEventListener('change', () => {
+            updateStrikeDisplay();
+            calculate();
+        });
+        document.getElementById('put-premium').addEventListener('input', calculate);
+
+        // Initialize
+        initTheme();
+        window.addEventListener('load', async () => {
+            marketData = await fetchMarketData();
+            updateMarketDataDisplay();
+            calculate(); // Initial calculation
+        });
+    </script>
+</body>
+</html>
