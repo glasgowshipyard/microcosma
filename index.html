@@ -181,21 +181,27 @@
 
             <div class="space-y-6">
                 <div>
-                    <label class="block text-sm mb-2" style="color: var(--text-muted);">Portfolio Value ($)</label>
+                    <label class="block text-sm mb-2" style="color: var(--text-muted);">Portfolio SPY Exposure ($)</label>
                     <input
                         type="number"
                         id="portfolio-exposure"
                         value="100000"
                         class="w-full rounded px-4 py-3 text-lg font-bold">
+                    <p class="text-xs mt-1" style="color: var(--text-muted);">
+                        Value of S&P 500 holdings you want to hedge
+                    </p>
                 </div>
 
                 <div>
-                    <label class="block text-sm mb-2" style="color: var(--text-muted);">Annual Budget for Insurance ($)</label>
+                    <label class="block text-sm mb-2" style="color: var(--text-muted);">Max Spend Per Purchase ($)</label>
                     <input
                         type="number"
-                        id="hedge-budget"
-                        value="1500"
+                        id="per-purchase-budget"
+                        value="250"
                         class="w-full rounded px-4 py-3 text-lg font-bold">
+                    <p class="text-xs mt-1" style="color: var(--text-muted);">
+                        How much you want to spend each time you buy
+                    </p>
                 </div>
 
                 <div>
@@ -237,13 +243,13 @@
                         Look up this contract on <a href="#" id="yahoo-link" target="_blank" class="underline" style="color: var(--accent);">Yahoo Finance</a>
                     </p>
                     <div class="text-sm font-bold mb-2" id="contract-description">--</div>
-                    <label class="block text-xs mb-1" style="color: var(--text-muted);">Ask Price (per contract)</label>
+                    <label class="block text-xs mb-1" style="color: var(--text-muted);">Ask Price (per share, will auto-multiply by 100)</label>
                     <input
                         type="number"
                         id="put-premium"
-                        value="50"
+                        value="0.50"
                         step="0.01"
-                        placeholder="Enter ask price from broker"
+                        placeholder="e.g., 0.64"
                         class="w-full rounded px-3 py-2 text-base font-bold">
                 </div>
             </div>
@@ -290,9 +296,65 @@
                 </div>
             </div>
 
-            <div class="card rounded-lg p-6">
+            <div class="card rounded-lg p-6 mb-8">
                 <h3 class="text-lg font-bold mb-3">Summary</h3>
                 <div class="text-sm leading-relaxed" style="color: var(--text-muted);" id="explanation"></div>
+            </div>
+
+            <!-- Historical Crash Scenarios -->
+            <div class="card rounded-lg p-6">
+                <h3 class="text-lg font-bold mb-4 gradient-text">Historical Crash Scenarios</h3>
+                <p class="text-xs mb-6" style="color: var(--text-muted);">
+                    What would your hedge have returned during actual market catastrophes?
+                </p>
+
+                <div class="space-y-6">
+                    <!-- 2008 Financial Crisis -->
+                    <div class="p-4 rounded" style="background: var(--input-bg); border-left: 4px solid #ec4899;">
+                        <div class="mb-3">
+                            <div class="text-sm font-bold">2008 Financial Crisis</div>
+                            <div class="text-xs" style="color: var(--text-muted);">Oct 2007 peak → Mar 2009 trough</div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 text-xs mb-3">
+                            <div>
+                                <div style="color: var(--text-muted);">VIX Peak</div>
+                                <div class="font-bold">89.53</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--text-muted);">SPY Peak</div>
+                                <div class="font-bold">$157</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--text-muted);">SPY Bottom</div>
+                                <div class="font-bold">$68</div>
+                            </div>
+                        </div>
+                        <div class="text-sm leading-relaxed" id="crash-2008"></div>
+                    </div>
+
+                    <!-- COVID-19 Crash -->
+                    <div class="p-4 rounded" style="background: var(--input-bg); border-left: 4px solid #f472b6;">
+                        <div class="mb-3">
+                            <div class="text-sm font-bold">COVID-19 Crash</div>
+                            <div class="text-xs" style="color: var(--text-muted);">Feb 2020 peak → Mar 2020 trough</div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 text-xs mb-3">
+                            <div>
+                                <div style="color: var(--text-muted);">VIX Peak</div>
+                                <div class="font-bold">82.69</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--text-muted);">SPY Peak</div>
+                                <div class="font-bold">$339</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--text-muted);">SPY Bottom</div>
+                                <div class="font-bold">$218</div>
+                            </div>
+                        </div>
+                        <div class="text-sm leading-relaxed" id="crash-2020"></div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -491,86 +553,125 @@
             }
         }
 
-        // Core calculation: simplified
-        function calculateHedge(portfolio, annualBudget, buyFrequency, putPremium, vixMultiplier, strikeDistance) {
-            // Adjust budget based on VIX
-            const adjustedAnnualBudget = annualBudget * vixMultiplier;
+        // Core calculation: fixed
+        function calculateHedge(portfolio, perPurchaseBudget, buyFrequency, putPremiumPerShare, vixMultiplier, strikeDistance, spyPrice) {
+            // VIX adjustment: scale down purchases when VIX is high (insurance expensive)
+            const vixAdjustedBudget = perPurchaseBudget * vixMultiplier;
 
-            // Budget per purchase
-            const budgetPerPurchase = adjustedAnnualBudget / buyFrequency;
+            // Convert per-share price to per-contract price (1 contract = 100 shares)
+            const costPerContract = putPremiumPerShare * 100;
 
-            // Contracts you can afford per purchase
-            const contractsPerPurchase = Math.floor(budgetPerPurchase / putPremium);
+            // How many contracts can you afford per purchase?
+            const contractsPerPurchase = Math.floor(vixAdjustedBudget / costPerContract);
 
-            // Total annual contracts
+            // Actual cost per purchase
+            const actualCostPerPurchase = contractsPerPurchase * costPerContract;
+
+            // Annual totals
             const totalAnnualContracts = contractsPerPurchase * buyFrequency;
+            const totalAnnualCost = actualCostPerPurchase * buyFrequency;
 
-            // Each contract represents 100 shares
-            const spyManualInput = document.getElementById('spy-manual');
-            const spyPrice = spyManualInput.value ? parseFloat(spyManualInput.value) : (marketData.spyPrice || 450);
+            // Calculate coverage
             const strikePrice = Math.floor(spyPrice * (1 - strikeDistance / 100));
+            const portfolioLossAtStrike = portfolio * (strikeDistance / 100);
 
-            // Protection provided (rough estimate)
-            // If SPY hits strike, payout = (strike - 0) * 100 * contracts (extreme case)
-            // More realistically, at the strike level, intrinsic value covers that level
-            const protectionPerContract = strikePrice * 100; // Rough max payout
-            const totalProtection = protectionPerContract * totalAnnualContracts;
+            // Max payout per contract at strike = (SPY start - strike) * 100
+            const payoutPerContract = (spyPrice - strikePrice) * 100;
+            const totalMaxPayout = payoutPerContract * totalAnnualContracts;
 
-            // Cost per purchase
-            const costPerPurchase = contractsPerPurchase * putPremium;
+            // What % of portfolio loss is covered?
+            const coveragePercent = (totalMaxPayout / portfolioLossAtStrike) * 100;
 
             return {
                 contractsPerPurchase,
-                costPerPurchase,
-                budgetPerPurchase,
-                adjustedAnnualBudget,
+                actualCostPerPurchase,
+                vixAdjustedBudget,
                 totalAnnualContracts,
-                totalAnnualCost: costPerPurchase * buyFrequency
+                totalAnnualCost,
+                costPerContract,
+                coveragePercent,
+                totalMaxPayout,
+                portfolioLossAtStrike
             };
+        }
+
+        // Calculate historical crash scenario returns using actual historical SPY prices
+        function calculateCrashScenario(crashName, crashVix, historicalPeakSPY, historicalBottomSPY, portfolio, currentSPY, totalAnnualContracts, totalAnnualCost, strikeDistance) {
+            const strikePrice = Math.floor(historicalPeakSPY * (1 - strikeDistance / 100));
+            const historicalDropPercent = ((historicalPeakSPY - historicalBottomSPY) / historicalPeakSPY) * 100;
+
+            if (historicalBottomSPY >= strikePrice) {
+                return `<span style="color: var(--text-muted);">-${historicalDropPercent.toFixed(0)}% drop. Strike not hit.</span>`;
+            }
+
+            const intrinsicValue = strikePrice - historicalBottomSPY;
+            const payoutPerContract = intrinsicValue * 100;
+            const totalPayout = payoutPerContract * totalAnnualContracts;
+            const portfolioLoss = portfolio * (historicalDropPercent / 100);
+            const recoveryPercent = (totalPayout / portfolioLoss) * 100;
+
+            return `
+                -${historicalDropPercent.toFixed(0)}% drop | Strike: $${strikePrice}<br>
+                Payout: $${totalPayout.toLocaleString()} | Recovered ${recoveryPercent.toFixed(0)}% of loss
+            `;
         }
 
         // Calculate and display results (auto-updates)
         function calculate() {
             const portfolio = parseFloat(document.getElementById('portfolio-exposure').value);
-            const annualBudget = parseFloat(document.getElementById('hedge-budget').value);
+            const perPurchaseBudget = parseFloat(document.getElementById('per-purchase-budget').value);
             const buyFrequency = parseFloat(document.getElementById('buy-frequency').value);
             const strikeDistance = parseFloat(document.getElementById('strike-distance').value);
             const putPremium = parseFloat(document.getElementById('put-premium').value);
 
-            if (!marketData.vix || !portfolio || !annualBudget || !buyFrequency || !strikeDistance || !putPremium) {
+            if (!marketData.vix || !portfolio || !perPurchaseBudget || !buyFrequency || !strikeDistance || !putPremium || !marketData.spyPrice) {
                 return;
             }
 
-            const result = calculateHedge(portfolio, annualBudget, buyFrequency, putPremium, marketData.vixMultiplier, strikeDistance);
+            const spyManualInput = document.getElementById('spy-manual');
+            const spyPrice = spyManualInput.value ? parseFloat(spyManualInput.value) : marketData.spyPrice;
+
+            const result = calculateHedge(portfolio, perPurchaseBudget, buyFrequency, putPremium, marketData.vixMultiplier, strikeDistance, spyPrice);
 
             // Update results display
             document.getElementById('contracts-needed').textContent = result.contractsPerPurchase;
-            document.getElementById('total-capital').textContent = `$${result.costPerPurchase.toFixed(2)}`;
-            document.getElementById('adjusted-budget').textContent = `$${result.budgetPerPurchase.toFixed(2)}`;
+            document.getElementById('total-capital').textContent = `$${result.actualCostPerPurchase.toFixed(2)}`;
+            document.getElementById('adjusted-budget').textContent = `$${result.vixAdjustedBudget.toFixed(2)}`;
 
             document.getElementById('max-exposure').textContent = result.totalAnnualContracts;
             document.getElementById('contracts-affordable').textContent = `$${result.totalAnnualCost.toFixed(2)}`;
-            document.getElementById('coverage-info').textContent = `${strikeDistance}% OTM`;
+            document.getElementById('coverage-info').textContent = `${result.coveragePercent.toFixed(0)}% of loss`;
 
             const frequencyText = buyFrequency == 12 ? 'month' : buyFrequency == 4 ? 'quarter' : buyFrequency == 2 ? 'half-year' : 'year';
 
             const explanation = `
-                Based on your $${annualBudget.toLocaleString()} annual budget (VIX-adjusted to $${result.adjustedAnnualBudget.toFixed(2)}),
-                buying ${buyFrequency}x per year:
+                <strong>Portfolio Coverage:</strong><br>
+                Portfolio: $${portfolio.toLocaleString()} | Loss at ${strikeDistance}% crash: $${result.portfolioLossAtStrike.toLocaleString()}<br>
+                Max hedge payout: $${result.totalMaxPayout.toLocaleString()} = <strong>${result.coveragePercent.toFixed(1)}% coverage</strong>
                 <br><br>
-                <strong>Per Purchase:</strong><br>
-                Buy ${result.contractsPerPurchase} contracts at $${putPremium} each = $${result.costPerPurchase.toFixed(2)} per ${frequencyText}.
+                <strong>Per ${frequencyText.charAt(0).toUpperCase() + frequencyText.slice(1)}:</strong><br>
+                Buy ${result.contractsPerPurchase} contracts at $${result.costPerContract.toFixed(2)}/contract = $${result.actualCostPerPurchase.toFixed(2)}
                 <br><br>
-                <strong>Annually:</strong><br>
-                Total ${result.totalAnnualContracts} contracts, costing $${result.totalAnnualCost.toFixed(2)}/year.
+                <strong>Annual Total:</strong><br>
+                ${result.totalAnnualContracts} contracts, $${result.totalAnnualCost.toFixed(2)}/year (${((result.totalAnnualCost/portfolio)*100).toFixed(2)}% of portfolio)
                 <br><br>
-                ${result.totalAnnualCost > result.adjustedAnnualBudget
-                    ? `<span style="color: #f59e0b;">Warning: You're over budget by $${(result.totalAnnualCost - result.adjustedAnnualBudget).toFixed(2)}. Reduce buy frequency or pick cheaper contracts.</span>`
-                    : `You're within budget. Remaining: $${(result.adjustedAnnualBudget - result.totalAnnualCost).toFixed(2)}.`
+                ${result.coveragePercent < 25
+                    ? `<span style="color: #f59e0b;">⚠️ Low coverage (${result.coveragePercent.toFixed(0)}%). Consider increasing budget or buying more frequently.</span>`
+                    : result.coveragePercent > 75
+                    ? `<span style="color: #10b981;">✓ Strong coverage (${result.coveragePercent.toFixed(0)}%).</span>`
+                    : `Moderate coverage (${result.coveragePercent.toFixed(0)}%).`
                 }
             `;
 
             document.getElementById('explanation').innerHTML = explanation;
+
+            // Calculate historical crash scenarios using actual historical prices
+            const crash2008 = calculateCrashScenario('2008 Financial Crisis', 89.53, 157, 68, portfolio, spyPrice, result.totalAnnualContracts, result.totalAnnualCost, strikeDistance);
+            const crash2020 = calculateCrashScenario('COVID-19 Crash', 82.69, 339, 218, portfolio, spyPrice, result.totalAnnualContracts, result.totalAnnualCost, strikeDistance);
+
+            document.getElementById('crash-2008').innerHTML = crash2008;
+            document.getElementById('crash-2020').innerHTML = crash2020;
+
             document.getElementById('results').classList.remove('hidden');
         }
 
@@ -592,7 +693,7 @@
 
         // Auto-calculate on any input change
         document.getElementById('portfolio-exposure').addEventListener('input', calculate);
-        document.getElementById('hedge-budget').addEventListener('input', calculate);
+        document.getElementById('per-purchase-budget').addEventListener('input', calculate);
         document.getElementById('buy-frequency').addEventListener('change', calculate);
         document.getElementById('strike-distance').addEventListener('change', () => {
             updateStrikeDisplay();
