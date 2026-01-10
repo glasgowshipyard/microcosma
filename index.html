@@ -702,6 +702,10 @@
                     ? `<span style="color: #10b981;">✓ Strong coverage (${result.coveragePercent.toFixed(0)}%).</span>`
                     : `Moderate coverage (${result.coveragePercent.toFixed(0)}%).`
                 }
+                <br><br>
+                <span style="color: var(--text-muted); font-size: 0.85em;">
+                Note: Assumes optimal timing (${result.activeContractsInCrash} contracts active during crash). Actual coverage varies with crash timing and rolling strikes.
+                </span>
             `;
 
             document.getElementById('explanation').innerHTML = explanation;
