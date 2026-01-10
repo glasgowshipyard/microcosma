@@ -418,16 +418,16 @@
                     </p>
 
                     <p>
-                        <strong>Final warning:</strong> This strategy can and will lead to total financial
-                        obliteration if you mess it up. Use at your own risk. You are  responsible for
-                        your losses, margin calls, and  existential crises. Not this tiny app.
+                        <strong>⚠️ warning:</strong> This strategy can and will lead to total financial
+                        obliteration if you mess it up. Do it at your own risk. You're responsible for
+                        your losses, margin calls, and existential crises. This tiny app isn't.
                     </p>
                 </div>
             </details>
 
             <div class="text-center text-sm" style="color: var(--text-muted);">
-                <p class="mb-2">Built with conviction. Hedged with discipline. 🦔</p>
-                <p>Not financial advice. For educational purposes only.</p>
+                <p class="mb-2">Become the Hedgehog 🦔</p>
+                <p>Not financial advice. For educational purposes only. All the math is probably wrong anyway</p>
                 <p class="mt-4 text-xs">Last updated: <span id="last-updated">Never</span></p>
             </div>
         </footer>
@@ -588,12 +588,14 @@
             const totalAnnualContracts = contractsPerPurchase * buyFrequency;
             const totalAnnualCost = actualCostPerPurchase * buyFrequency;
 
-            // Calculate coverage
+            // Calculate coverage AT STRIKE (not at $0!)
             const strikePrice = Math.floor(spyPrice * (1 - strikeDistance / 100));
             const portfolioLossAtStrike = portfolio * (strikeDistance / 100);
 
-            // Max payout per contract at strike = (SPY start - strike) * 100
-            const payoutPerContract = (spyPrice - strikePrice) * 100;
+            // Payout per contract if SPY hits exactly the strike
+            // This is the MINIMUM payout - it could be higher if SPY crashes below strike
+            const intrinsicValueAtStrike = spyPrice - strikePrice;
+            const payoutPerContract = intrinsicValueAtStrike * 100;
             const totalMaxPayout = payoutPerContract * totalAnnualContracts;
 
             // What % of portfolio loss is covered?
@@ -699,10 +701,10 @@
                 Max payout at ${strikeDistance}% drop: $${totalMaxPayout.toLocaleString()}<br>
                 <br>
                 <strong>Portfolio size for ${targetCoverage}% coverage: $${maxPortfolioAt50Coverage.toLocaleString()}</strong><br>
-                ${portfolio > maxPortfolioAt50Coverage
-                    ? `<span style="color: #f59e0b;">⚠️ Over-insured. Current ($${portfolio.toLocaleString()}) is ${((portfolio/maxPortfolioAt50Coverage)*100).toFixed(0)}% of target.<br>Options: Scale up to $${maxPortfolioAt50Coverage.toLocaleString()} OR cut budget to $${((result.totalAnnualCost * portfolio / maxPortfolioAt50Coverage)).toFixed(0)}/year</span>`
-                    : portfolio < maxPortfolioAt50Coverage * 0.5
-                    ? `<span style="color: #f59e0b;">⚠️ Under-insured. Current ($${portfolio.toLocaleString()}) is ${((portfolio/maxPortfolioAt50Coverage)*100).toFixed(0)}% of target.<br>Option: Increase budget to ~$${((result.totalAnnualCost * maxPortfolioAt50Coverage / portfolio)).toFixed(0)}/year</span>`
+                ${portfolio < maxPortfolioAt50Coverage
+                    ? `<span style="color: #f59e0b;">⚠️ Over-insured. Portfolio ($${portfolio.toLocaleString()}) is only ${((portfolio/maxPortfolioAt50Coverage)*100).toFixed(0)}% of target.<br>Options: Scale up to $${maxPortfolioAt50Coverage.toLocaleString()} OR cut budget to $${((result.totalAnnualCost * portfolio / maxPortfolioAt50Coverage)).toFixed(0)}/year</span>`
+                    : portfolio > maxPortfolioAt50Coverage * 2
+                    ? `<span style="color: #f59e0b;">⚠️ Under-insured. Portfolio ($${portfolio.toLocaleString()}) is ${((portfolio/maxPortfolioAt50Coverage)*100).toFixed(0)}% of target.<br>Option: Increase budget to ~$${((result.totalAnnualCost * maxPortfolioAt50Coverage / portfolio)).toFixed(0)}/year</span>`
                     : `<span style="color: #10b981;">✓ In range. Portfolio is ${((portfolio/maxPortfolioAt50Coverage)*100).toFixed(0)}% of ${targetCoverage}% coverage target.</span>`
                 }
             `;
