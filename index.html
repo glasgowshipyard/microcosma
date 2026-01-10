@@ -101,21 +101,34 @@
         summary:hover {
             color: var(--text);
         }
+
+        /* Mobile responsive typography and spacing */
+        @media (max-width: 640px) {
+            .header-hedgehog {
+                font-size: 3rem;
+            }
+            .header-title {
+                font-size: 2rem;
+            }
+            .header-subtitle {
+                font-size: 0.75rem;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="max-w-3xl mx-auto px-6 py-12">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
 
         <!-- Header -->
-        <header class="mb-16">
-            <div class="flex justify-between items-center mb-8">
-                <div class="flex items-center gap-6">
-                    <div class="text-8xl">🦔</div>
+        <header class="mb-12 sm:mb-16">
+            <div class="flex justify-between items-center mb-6 sm:mb-8">
+                <div class="flex items-center gap-3 sm:gap-6">
+                    <div class="header-hedgehog text-5xl sm:text-8xl">🦔</div>
                     <div>
-                        <h1 class="text-5xl font-bold mb-2">
+                        <h1 class="header-title text-3xl sm:text-5xl font-bold mb-1 sm:mb-2">
                             <span class="gradient-text">Microcosma</span>
                         </h1>
-                        <p class="text-sm" style="color: var(--text-muted);">ReTail Risk Hedgehog</p>
+                        <p class="header-subtitle text-xs sm:text-sm" style="color: var(--text-muted);">ReTail Risk Hedgehog</p>
                     </div>
                 </div>
                 <div class="theme-toggle" onclick="toggleTheme()">
@@ -131,13 +144,13 @@
         </header>
 
         <!-- Market Data Card -->
-        <section class="card rounded-lg p-8 mb-8">
-            <h2 class="text-2xl font-bold mb-6">Market Data</h2>
+        <section class="card rounded-lg p-4 sm:p-8 mb-6 sm:mb-8">
+            <h2 class="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Market Data</h2>
 
-            <div class="grid grid-cols-3 gap-4 mb-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                 <div>
                     <div class="text-xs mb-2" style="color: var(--text-muted);">SPY Price</div>
-                    <div class="text-3xl font-bold" id="spy-price">--</div>
+                    <div class="text-2xl sm:text-3xl font-bold" id="spy-price">--</div>
                     <div class="text-xs mt-1" style="color: var(--text-muted);">Previous Close</div>
                 </div>
                 <div>
@@ -147,20 +160,20 @@
                         id="vix-manual"
                         value="16"
                         step="0.1"
-                        class="text-3xl font-bold w-full rounded px-2 py-1"
+                        class="text-2xl sm:text-3xl font-bold w-full rounded px-2 py-1"
                         placeholder="16">
                     <div class="text-xs mt-1" style="color: var(--text-muted);">Manual Entry</div>
                 </div>
                 <div>
                     <div class="text-xs mb-2" style="color: var(--text-muted);">Budget Multiplier</div>
-                    <div class="text-3xl font-bold" id="vix-multiplier">--</div>
+                    <div class="text-2xl sm:text-3xl font-bold" id="vix-multiplier">--</div>
                     <div class="text-xs mt-1" style="color: var(--text-muted);">VIX-Adjusted</div>
                 </div>
             </div>
 
-            <div class="p-3 rounded text-xs mb-4" style="background: var(--input-bg);">
-                <strong>VIX Budget Rule:</strong> VIX &lt;20 = 100% budget | VIX 20-30 = 75% | VIX &gt;30 = 50%<br>
-                Buy more insurance when it's cheap, less when expensive.
+            <div class="p-3 rounded text-xs mb-4" style="background: var(--input-bg); line-height: 1.6;">
+                <strong>VIX Budget Rule:</strong> VIX &lt;20 = 100% | VIX 20-30 = 75% | VIX &gt;30 = 50%<br>
+                Buy more insurance when cheap, less when expensive.
             </div>
 
             <p class="text-xs mb-4" style="color: var(--text-muted);">
@@ -185,37 +198,37 @@
         </section>
 
         <!-- Calculator Card -->
-        <section class="card rounded-lg p-8 mb-8">
-            <h2 class="text-2xl font-bold mb-6">Your Hedge</h2>
+        <section class="card rounded-lg p-4 sm:p-8 mb-6 sm:mb-8">
+            <h2 class="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Your Hedge</h2>
 
             <div class="space-y-6">
                 <div>
-                    <label class="block text-sm mb-2" style="color: var(--text-muted);">Portfolio SPY Exposure ($)</label>
+                    <label class="block text-xs sm:text-sm mb-2" style="color: var(--text-muted);">Portfolio SPY Exposure ($)</label>
                     <input
                         type="number"
                         id="portfolio-exposure"
                         value="100000"
-                        class="w-full rounded px-4 py-3 text-lg font-bold">
+                        class="w-full rounded px-3 sm:px-4 py-2 sm:py-3 text-base sm:text-lg font-bold">
                     <p class="text-xs mt-1" style="color: var(--text-muted);">
                         Value of S&P 500 holdings you want to hedge
                     </p>
                 </div>
 
                 <div>
-                    <label class="block text-sm mb-2" style="color: var(--text-muted);">Max Spend Per Purchase ($)</label>
+                    <label class="block text-xs sm:text-sm mb-2" style="color: var(--text-muted);">Max Spend Per Purchase ($)</label>
                     <input
                         type="number"
                         id="per-purchase-budget"
                         value="250"
-                        class="w-full rounded px-4 py-3 text-lg font-bold">
+                        class="w-full rounded px-3 sm:px-4 py-2 sm:py-3 text-base sm:text-lg font-bold">
                     <p class="text-xs mt-1" style="color: var(--text-muted);">
                         How much you want to spend each time you buy
                     </p>
                 </div>
 
                 <div>
-                    <label class="block text-sm mb-2" style="color: var(--text-muted);">Buy Frequency</label>
-                    <select id="buy-frequency" class="w-full rounded px-4 py-3 text-lg font-bold" style="background: var(--input-bg); border: 1px solid var(--border); color: var(--text);">
+                    <label class="block text-xs sm:text-sm mb-2" style="color: var(--text-muted);">Buy Frequency</label>
+                    <select id="buy-frequency" class="w-full rounded px-3 sm:px-4 py-2 sm:py-3 text-base sm:text-lg font-bold" style="background: var(--input-bg); border: 1px solid var(--border); color: var(--text);">
                         <option value="12">Monthly</option>
                         <option value="4" selected>Quarterly</option>
                         <option value="2">Semi-Annual</option>
@@ -224,8 +237,8 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm mb-2" style="color: var(--text-muted);">Strike Distance</label>
-                    <select id="strike-distance" class="w-full rounded px-4 py-3 text-lg font-bold" style="background: var(--input-bg); border: 1px solid var(--border); color: var(--text);">
+                    <label class="block text-xs sm:text-sm mb-2" style="color: var(--text-muted);">Strike Distance</label>
+                    <select id="strike-distance" class="w-full rounded px-3 sm:px-4 py-2 sm:py-3 text-base sm:text-lg font-bold" style="background: var(--input-bg); border: 1px solid var(--border); color: var(--text);">
                         <option value="10">10% OTM</option>
                         <option value="20">20% OTM</option>
                         <option value="30" selected>30% OTM (Black Swan)</option>
@@ -238,8 +251,8 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm mb-2" style="color: var(--text-muted);">Days to Expiration</label>
-                    <select id="days-to-expiration" class="w-full rounded px-4 py-3 text-lg font-bold" style="background: var(--input-bg); border: 1px solid var(--border); color: var(--text);">
+                    <label class="block text-xs sm:text-sm mb-2" style="color: var(--text-muted);">Days to Expiration</label>
+                    <select id="days-to-expiration" class="w-full rounded px-3 sm:px-4 py-2 sm:py-3 text-base sm:text-lg font-bold" style="background: var(--input-bg); border: 1px solid var(--border); color: var(--text);">
                         <option value="30">30 Days</option>
                         <option value="60">60 Days</option>
                         <option value="90" selected>90 Days</option>
@@ -267,72 +280,72 @@
 
         <!-- Results Card -->
         <section id="results" class="hidden">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div class="card rounded-lg p-6">
-                    <h3 class="text-lg font-bold mb-4 gradient-text">Per Purchase</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                <div class="card rounded-lg p-4 sm:p-6">
+                    <h3 class="text-base sm:text-lg font-bold mb-3 sm:mb-4 gradient-text">Per Purchase</h3>
                     <div class="space-y-3">
                         <div>
                             <div class="text-xs" style="color: var(--text-muted);">Contracts to Buy</div>
-                            <div class="text-3xl font-bold" id="contracts-needed">--</div>
+                            <div class="text-2xl sm:text-3xl font-bold" id="contracts-needed">--</div>
                         </div>
                         <div>
                             <div class="text-xs" style="color: var(--text-muted);">Cost</div>
-                            <div class="text-3xl font-bold" id="total-capital">--</div>
+                            <div class="text-2xl sm:text-3xl font-bold" id="total-capital">--</div>
                         </div>
                         <div>
                             <div class="text-xs" style="color: var(--text-muted);">Budget Allocated</div>
-                            <div class="text-lg" id="adjusted-budget">--</div>
+                            <div class="text-base sm:text-lg" id="adjusted-budget">--</div>
                         </div>
                     </div>
                 </div>
 
-                <div class="card rounded-lg p-6">
-                    <h3 class="text-lg font-bold mb-4 gradient-text">Annual Total</h3>
+                <div class="card rounded-lg p-4 sm:p-6">
+                    <h3 class="text-base sm:text-lg font-bold mb-3 sm:mb-4 gradient-text">Annual Total</h3>
                     <div class="space-y-3">
                         <div>
                             <div class="text-xs" style="color: var(--text-muted);">Total Contracts</div>
-                            <div class="text-3xl font-bold" id="max-exposure">--</div>
+                            <div class="text-2xl sm:text-3xl font-bold" id="max-exposure">--</div>
                         </div>
                         <div>
                             <div class="text-xs" style="color: var(--text-muted);">Total Annual Cost</div>
-                            <div class="text-3xl font-bold" id="contracts-affordable">--</div>
+                            <div class="text-2xl sm:text-3xl font-bold" id="contracts-affordable">--</div>
                         </div>
                         <div>
                             <div class="text-xs" style="color: var(--text-muted);">Protection Level</div>
-                            <div class="text-lg" id="coverage-info">--</div>
+                            <div class="text-base sm:text-lg" id="coverage-info">--</div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="card rounded-lg p-6 mb-8">
-                <h3 class="text-lg font-bold mb-3">Summary</h3>
-                <div class="text-sm leading-relaxed" style="color: var(--text-muted);" id="explanation"></div>
+            <div class="card rounded-lg p-4 sm:p-6 mb-6 sm:mb-8">
+                <h3 class="text-base sm:text-lg font-bold mb-3">Summary</h3>
+                <div class="text-xs sm:text-sm leading-relaxed" style="color: var(--text-muted);" id="explanation"></div>
             </div>
 
-            <div class="card rounded-lg p-6 mb-8">
-                <h3 class="text-lg font-bold mb-4 gradient-text">Exposure Capacity</h3>
-                <p class="text-xs mb-4" style="color: var(--text-muted);">
+            <div class="card rounded-lg p-4 sm:p-6 mb-6 sm:mb-8">
+                <h3 class="text-base sm:text-lg font-bold mb-3 sm:mb-4 gradient-text">Exposure Capacity</h3>
+                <p class="text-xs mb-3 sm:mb-4" style="color: var(--text-muted);">
                     With your budget, what's the maximum portfolio size you can hedge?
                 </p>
-                <div class="text-sm leading-relaxed" style="color: var(--text-muted);" id="exposure-capacity"></div>
+                <div class="text-xs sm:text-sm leading-relaxed" style="color: var(--text-muted);" id="exposure-capacity"></div>
             </div>
 
             <!-- Historical Crash Scenarios -->
-            <div class="card rounded-lg p-6">
-                <h3 class="text-lg font-bold mb-4 gradient-text">Historical Crash Scenarios</h3>
-                <p class="text-xs mb-6" style="color: var(--text-muted);">
+            <div class="card rounded-lg p-4 sm:p-6">
+                <h3 class="text-base sm:text-lg font-bold mb-3 sm:mb-4 gradient-text">Historical Crash Scenarios</h3>
+                <p class="text-xs mb-4 sm:mb-6" style="color: var(--text-muted);">
                     What would your hedge have returned during actual market catastrophes?
                 </p>
 
-                <div class="space-y-6">
+                <div class="space-y-4 sm:space-y-6">
                     <!-- 2008 Financial Crisis -->
-                    <div class="p-4 rounded" style="background: var(--input-bg); border-left: 4px solid #ec4899;">
-                        <div class="mb-3">
-                            <div class="text-sm font-bold">2008 Financial Crisis</div>
+                    <div class="p-3 sm:p-4 rounded" style="background: var(--input-bg); border-left: 4px solid #ec4899;">
+                        <div class="mb-2 sm:mb-3">
+                            <div class="text-xs sm:text-sm font-bold">2008 Financial Crisis</div>
                             <div class="text-xs" style="color: var(--text-muted);">Oct 2007 peak → Mar 2009 trough</div>
                         </div>
-                        <div class="grid grid-cols-3 gap-4 text-xs mb-3">
+                        <div class="grid grid-cols-3 gap-2 sm:gap-4 text-xs mb-2 sm:mb-3">
                             <div>
                                 <div style="color: var(--text-muted);">VIX Peak</div>
                                 <div class="font-bold">89.53</div>
@@ -346,16 +359,16 @@
                                 <div class="font-bold">$68</div>
                             </div>
                         </div>
-                        <div class="text-sm leading-relaxed" id="crash-2008"></div>
+                        <div class="text-xs sm:text-sm leading-relaxed" id="crash-2008"></div>
                     </div>
 
                     <!-- COVID-19 Crash -->
-                    <div class="p-4 rounded" style="background: var(--input-bg); border-left: 4px solid #f472b6;">
-                        <div class="mb-3">
-                            <div class="text-sm font-bold">COVID-19 Crash</div>
+                    <div class="p-3 sm:p-4 rounded" style="background: var(--input-bg); border-left: 4px solid #f472b6;">
+                        <div class="mb-2 sm:mb-3">
+                            <div class="text-xs sm:text-sm font-bold">COVID-19 Crash</div>
                             <div class="text-xs" style="color: var(--text-muted);">Feb 2020 peak → Mar 2020 trough</div>
                         </div>
-                        <div class="grid grid-cols-3 gap-4 text-xs mb-3">
+                        <div class="grid grid-cols-3 gap-2 sm:gap-4 text-xs mb-2 sm:mb-3">
                             <div>
                                 <div style="color: var(--text-muted);">VIX Peak</div>
                                 <div class="font-bold">82.69</div>
@@ -369,7 +382,7 @@
                                 <div class="font-bold">$218</div>
                             </div>
                         </div>
-                        <div class="text-sm leading-relaxed" id="crash-2020"></div>
+                        <div class="text-xs sm:text-sm leading-relaxed" id="crash-2020"></div>
                     </div>
                 </div>
             </div>
