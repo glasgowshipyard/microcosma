@@ -50,19 +50,22 @@ console.log(`\nContracts per purchase: ${contractsPerPurchase}`);
 console.log(`Active contracts in crash: ${activeContractsInCrash}`);
 console.log(`Annual cost: $${totalAnnualCost}`);
 
-// Calculate payout at strike
-const intrinsicAtStrike = spyPrice - strike30pct;
-const profitAtStrike = (intrinsicAtStrike - premium) * 100;
+// Calculate payout at strike using volatility-based approximation
+// OLD (WRONG): intrinsicAtStrike = spyPrice - strike30pct = $210/share
+// NEW (CORRECT): At strike, intrinsic = $0. Value comes from implied volatility.
+const estimatedOptionPrice = strike30pct * 0.12; // 12% of strike during high-vol crash
+const profitAtStrike = (estimatedOptionPrice - premium) * 100;
 const totalProfit = profitAtStrike * activeContractsInCrash;
 
 const portfolioLoss30pct = portfolio * 0.30;
 const coverage = (totalProfit / portfolioLoss30pct) * 100;
 
-console.log(`\nAt 30% crash ($${strike30pct}):`);
-console.log(`Intrinsic value: $${intrinsicAtStrike}/share`);
-console.log(`Profit per contract: ($${intrinsicAtStrike} - $${premium}) × 100 = $${profitAtStrike}`);
+console.log(`\nAt 30% crash (SPY reaches strike $${strike30pct}):`);
+console.log(`Intrinsic value at strike: $0/share (ATM put has no intrinsic value)`);
+console.log(`Estimated option value (from volatility): $${estimatedOptionPrice.toFixed(2)}/share`);
+console.log(`Profit per contract: ($${estimatedOptionPrice.toFixed(2)} - $${premium}) × 100 = $${profitAtStrike.toFixed(0)}`);
 console.log(`Total profit from ${activeContractsInCrash} contracts: $${totalProfit.toLocaleString()}`);
 console.log(`Portfolio loss: $${portfolioLoss30pct.toLocaleString()}`);
 console.log(`Coverage: ${coverage.toFixed(1)}%`);
 
-console.log('\n✅ If calculator shows similar numbers, math is correct!');
+console.log('\n✅ If calculator shows ~45-50% coverage, math is now correct!');

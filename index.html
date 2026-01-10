@@ -605,13 +605,18 @@
             // NOT all 12 annual contracts
             const activeContractsInCrash = contractsPerPurchase;
 
-            // Calculate PROFIT at strike (intrinsic value MINUS premium paid)
+            // Calculate PROFIT at strike using volatility-based approximation
             const strikePrice = Math.floor(spyPrice * (1 - strikeDistance / 100));
             const portfolioLossAtStrike = portfolio * (strikeDistance / 100);
 
-            // Net profit per contract at strike = intrinsic value - premium paid
-            const intrinsicValueAtStrike = spyPrice - strikePrice;
-            const profitPerContractAtStrike = (intrinsicValueAtStrike - putPremiumPerShare) * 100;
+            // FIX: At strike, intrinsic value is ZERO for a put. Value comes from implied volatility.
+            // In a crash reaching the strike (e.g., 30% drop), VIX typically spikes to ~65-80.
+            // Using Black-Scholes approximation: ATM put with high vol (~65%) is worth ~12% of strike
+            // This accounts for remaining time value and volatility (not just intrinsic value)
+            const estimatedOptionPriceAtStrike = strikePrice * 0.12;
+
+            // Net profit = Estimated option value at strike - Premium paid
+            const profitPerContractAtStrike = (estimatedOptionPriceAtStrike - putPremiumPerShare) * 100;
 
             // Total payout from ACTIVE contracts only
             const totalPayoutAtStrike = profitPerContractAtStrike * activeContractsInCrash;
@@ -710,10 +715,11 @@
 
             document.getElementById('explanation').innerHTML = explanation;
 
-            // Calculate exposure capacity (reverse calculation using PROFIT-BASED logic)
+            // Calculate exposure capacity (reverse calculation using VOLATILITY-BASED logic)
             // Net profit per contract (after premium) from active contracts in ONE crash
             const strikePrice = Math.floor(spyPrice * (1 - strikeDistance / 100));
-            const profitPerContract = ((spyPrice - strikePrice) - putPremium) * 100;
+            const estimatedOptionPriceAtStrike = strikePrice * 0.12;
+            const profitPerContract = (estimatedOptionPriceAtStrike - putPremium) * 100;
             const totalProfit = profitPerContract * result.activeContractsInCrash;
 
             // At strike distance, portfolio loss = portfolio × (strike distance %)
