@@ -134,7 +134,7 @@
         <section class="card rounded-lg p-8 mb-8">
             <h2 class="text-2xl font-bold mb-6">Market Data</h2>
 
-            <div class="grid grid-cols-3 gap-4 mb-6">
+            <div class="grid grid-cols-3 gap-4 mb-4">
                 <div>
                     <div class="text-xs mb-2" style="color: var(--text-muted);">SPY Price</div>
                     <div class="text-3xl font-bold" id="spy-price">--</div>
@@ -156,6 +156,11 @@
                     <div class="text-3xl font-bold" id="vix-multiplier">--</div>
                     <div class="text-xs mt-1" style="color: var(--text-muted);">VIX-Adjusted</div>
                 </div>
+            </div>
+
+            <div class="p-3 rounded text-xs mb-4" style="background: var(--input-bg);">
+                <strong>VIX Budget Rule:</strong> VIX &lt;20 = 100% budget | VIX 20-30 = 75% | VIX &gt;30 = 50%<br>
+                Buy more insurance when it's cheap, less when expensive.
             </div>
 
             <p class="text-xs mb-4" style="color: var(--text-muted);">
@@ -303,6 +308,14 @@
             <div class="card rounded-lg p-6 mb-8">
                 <h3 class="text-lg font-bold mb-3">Summary</h3>
                 <div class="text-sm leading-relaxed" style="color: var(--text-muted);" id="explanation"></div>
+            </div>
+
+            <div class="card rounded-lg p-6 mb-8">
+                <h3 class="text-lg font-bold mb-4 gradient-text">Exposure Capacity</h3>
+                <p class="text-xs mb-4" style="color: var(--text-muted);">
+                    With your budget, what's the maximum portfolio size you can hedge?
+                </p>
+                <div class="text-sm leading-relaxed" style="color: var(--text-muted);" id="exposure-capacity"></div>
             </div>
 
             <!-- Historical Crash Scenarios -->
@@ -668,6 +681,25 @@
             `;
 
             document.getElementById('explanation').innerHTML = explanation;
+
+            // Calculate exposure capacity (reverse calculation)
+            const contractsAffordable = result.totalAnnualContracts;
+            const maxPayoutPerContract = (spyPrice - Math.floor(spyPrice * (1 - strikeDistance / 100))) * 100;
+            const totalMaxPayout = maxPayoutPerContract * contractsAffordable;
+            const maxPortfolioAtTargetCoverage = totalMaxPayout / (result.coveragePercent / 100);
+
+            const exposureCapacity = `
+                Your annual budget of $${result.totalAnnualCost.toFixed(0)} buys ${contractsAffordable} contracts/year.<br>
+                At ${strikeDistance}% OTM, max payout: $${totalMaxPayout.toLocaleString()}<br>
+                <br>
+                To maintain ${result.coveragePercent.toFixed(0)}% coverage, max portfolio: <strong>$${maxPortfolioAtTargetCoverage.toLocaleString()}</strong><br>
+                ${portfolio > maxPortfolioAtTargetCoverage
+                    ? `<span style="color: #f59e0b;">⚠️ Your current portfolio ($${portfolio.toLocaleString()}) exceeds this. Consider increasing budget.</span>`
+                    : `<span style="color: #10b981;">✓ Your current portfolio ($${portfolio.toLocaleString()}) is within capacity.</span>`
+                }
+            `;
+
+            document.getElementById('exposure-capacity').innerHTML = exposureCapacity;
 
             // Calculate historical crash scenarios using actual historical prices
             const crash2008 = calculateCrashScenario('2008 Financial Crisis', 89.53, 157, 68, portfolio, spyPrice, result.totalAnnualContracts, result.totalAnnualCost, strikeDistance);
