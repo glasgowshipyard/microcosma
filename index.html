@@ -102,6 +102,43 @@
             color: var(--text);
         }
 
+        /* Info icon popup styles */
+        .info-icon {
+            display: inline-block;
+            width: 1.2em;
+            height: 1.2em;
+            line-height: 1.2em;
+            text-align: center;
+            border-radius: 50%;
+            background: var(--accent);
+            color: white;
+            font-size: 0.75em;
+            cursor: pointer;
+            margin-left: 0.3em;
+            vertical-align: middle;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        .info-icon:hover {
+            transform: scale(1.1);
+            opacity: 0.9;
+        }
+
+        .info-popup {
+            display: none;
+            margin-top: 0.5em;
+            padding: 0.75em;
+            border-radius: 0.5em;
+            background: var(--input-bg);
+            border-left: 3px solid var(--accent);
+            font-size: 0.85em;
+            line-height: 1.6;
+        }
+
+        .info-popup.show {
+            display: block;
+        }
+
         /* Mobile responsive typography and spacing */
         @media (max-width: 640px) {
             .header-hedgehog {
@@ -637,28 +674,70 @@
             };
         }
 
-        // Calculate historical crash scenario returns using actual historical SPY prices
-        // FIXED: Now subtracts premium and only uses ONE purchase cycle's active contracts
+        // --- BLACK-SCHOLES HELPER FUNCTIONS ---
+
+        // Standard Normal Cumulative Distribution Function (needed for Black-Scholes)
+        function stdNormCDF(x) {
+            var t = 1 / (1 + 0.2316419 * Math.abs(x));
+            var d = 0.3989423 * Math.exp(-x * x / 2);
+            var prob = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+            if (x > 0) prob = 1 - prob;
+            return prob;
+        }
+
+        // Black-Scholes Put Valuation
+        function blackScholesPut(S, K, T, r, sigma) {
+            var d1 = (Math.log(S / K) + (r + 0.5 * sigma * sigma) * T) / (sigma * Math.sqrt(T));
+            var d2 = d1 - sigma * Math.sqrt(T);
+            return K * Math.exp(-r * T) * stdNormCDF(-d2) - S * stdNormCDF(-d1);
+        }
+
+        // --- HISTORICAL CRASH CALCULATOR WITH BLACK-SCHOLES ---
+
         function calculateCrashScenario(crashName, crashVix, historicalPeakSPY, historicalBottomSPY, portfolio, currentSPY, activeContractsInCrash, premiumPerShare, strikeDistance) {
+            // 1. Calculate the Strike you would have owned
             const strikePrice = Math.floor(historicalPeakSPY * (1 - strikeDistance / 100));
             const historicalDropPercent = ((historicalPeakSPY - historicalBottomSPY) / historicalPeakSPY) * 100;
 
-            if (historicalBottomSPY >= strikePrice) {
-                return `<span style="color: var(--text-muted);">-${historicalDropPercent.toFixed(0)}% drop. Strike not hit.</span>`;
-            }
+            // 2. Estimate the Option Value at the Crash Bottom using Black-Scholes
+            // Assumption: ~45 days (0.12 years) remaining on contract during crash
+            const T = 0.12;
+            const r = 0.04; // Risk-free rate assumption (4%)
+            const sigma = crashVix / 100; // Convert VIX (e.g., 82) to Volatility (0.82)
 
-            // Net PROFIT per contract = (Strike - Crash Price) - Premium Paid
-            const intrinsicValue = strikePrice - historicalBottomSPY;
-            const profitPerContract = (intrinsicValue - premiumPerShare) * 100;
+            const estimatedOptionPrice = blackScholesPut(historicalBottomSPY, strikePrice, T, r, sigma);
 
-            // Only active contracts from ONE purchase cycle pay out in a single crash
+            // 3. Calculate Profit: (Estimated Sell Price - Cost Basis) × 100 shares
+            const profitPerContract = (estimatedOptionPrice - premiumPerShare) * 100;
+
+            // Only active contracts from ONE purchase cycle pay out
             const totalProfit = profitPerContract * activeContractsInCrash;
             const portfolioLoss = portfolio * (historicalDropPercent / 100);
-            const recoveryPercent = (totalProfit / portfolioLoss) * 100;
+
+            // Avoid "NaN" if there's no profit/loss overlap (rare edge case)
+            let recoveryPercent = 0;
+            if (portfolioLoss > 0) {
+                recoveryPercent = (totalProfit / portfolioLoss) * 100;
+            }
+
+            // Formatting the output
+            let statusNote = "";
+            if (historicalBottomSPY > strikePrice) {
+                statusNote = `<span style="color: var(--text-muted);">(Strike not breached, but high VIX payout)</span>`;
+            } else {
+                statusNote = `<span style="color: #10b981;">(ITM + Volatility Premium)</span>`;
+            }
 
             return `
-                -${historicalDropPercent.toFixed(0)}% drop | Strike: $${strikePrice}<br>
-                Profit: $${totalProfit.toLocaleString()} | Recovered ${recoveryPercent.toFixed(0)}% of loss
+                -${historicalDropPercent.toFixed(0)}% drop | Strike: $${strikePrice} ${statusNote}<br>
+                Est. Option Value: $${(estimatedOptionPrice*100).toLocaleString(undefined, {maximumFractionDigits:0})} per contract
+                <span class="info-icon" onclick="toggleInfo('historical-${crashName.replace(/\s+/g, '-').toLowerCase()}-popup')">ℹ</span>
+                <div id="historical-${crashName.replace(/\s+/g, '-').toLowerCase()}-popup" class="info-popup">
+                    <strong>VIX-Adjusted Valuation:</strong><br>
+                    Calculated using the actual VIX peak of ${crashVix.toFixed(2)} during this crash. This captures the massive "Panic Premium" that makes deep OTM puts valuable during market collapses.
+                </div>
+                <br>
+                <strong>Net Profit: $${totalProfit.toLocaleString(undefined, {maximumFractionDigits:0})}</strong> | Recovered <strong>${recoveryPercent.toFixed(0)}%</strong> of loss
             `;
         }
 
@@ -694,6 +773,11 @@
                 <strong>Portfolio Coverage (Single Crash Event):</strong><br>
                 Portfolio: $${portfolio.toLocaleString()} | Loss at ${strikeDistance}% crash: $${result.portfolioLossAtStrike.toLocaleString()}<br>
                 Net profit from ${result.activeContractsInCrash} active contracts: $${result.totalPayoutAtStrike.toLocaleString()} = <strong>${result.coveragePercent.toFixed(1)}% coverage</strong>
+                <span class="info-icon" onclick="toggleInfo('coverage-info-popup')">ℹ</span>
+                <div id="coverage-info-popup" class="info-popup">
+                    <strong>Why not 100% coverage?</strong><br>
+                    Universa/Spitznagel strategies typically aim for 50-60% coverage. The goal isn't to be flat, but to have enough <strong>liquid cash to buy stocks at the bottom</strong> during rebalancing, which generates long-term compounding advantages.
+                </div>
                 <br><br>
                 <strong>Per ${frequencyText.charAt(0).toUpperCase() + frequencyText.slice(1)}:</strong><br>
                 Buy ${result.contractsPerPurchase} contracts at $${result.costPerContract.toFixed(2)}/contract = $${result.actualCostPerPurchase.toFixed(2)}
@@ -732,7 +816,13 @@
                 Annual budget: $${result.totalAnnualCost.toFixed(0)} → ${result.activeContractsInCrash} active contracts per crash<br>
                 Net profit at ${strikeDistance}% drop: $${totalProfit.toLocaleString()} (after premium)<br>
                 <br>
-                <strong>Portfolio size for ${targetCoverage}% coverage: $${maxPortfolioAt50Coverage.toLocaleString()}</strong><br>
+                <strong>Portfolio size for ${targetCoverage}% coverage: $${maxPortfolioAt50Coverage.toLocaleString()}</strong>
+                <span class="info-icon" onclick="toggleInfo('exposure-info-popup')">ℹ</span>
+                <div id="exposure-info-popup" class="info-popup">
+                    <strong>The "Buffer" Logic:</strong><br>
+                    Calculated by reversing your budget. If your actual portfolio is smaller than this number, you're "Over-Insured." This acts as a buffer against slippage, bid-ask spreads, and timing fuck ups.
+                </div>
+                <br>
                 ${portfolio < maxPortfolioAt50Coverage
                     ? `<span style="color: #f59e0b;">⚠️ Over-insured. Portfolio ($${portfolio.toLocaleString()}) is only ${((portfolio/maxPortfolioAt50Coverage)*100).toFixed(0)}% of target.<br>Options: Scale up to $${maxPortfolioAt50Coverage.toLocaleString()} OR cut budget to $${((result.totalAnnualCost * portfolio / maxPortfolioAt50Coverage)).toFixed(0)}/year</span>`
                     : portfolio > maxPortfolioAt50Coverage * 2
@@ -757,6 +847,14 @@
         async function refreshData() {
             marketData = await fetchMarketData();
             updateMarketDataDisplay();
+        }
+
+        // Toggle info popup
+        function toggleInfo(popupId) {
+            const popup = document.getElementById(popupId);
+            if (popup) {
+                popup.classList.toggle('show');
+            }
         }
 
         // Event listeners
