@@ -683,19 +683,25 @@
             document.getElementById('explanation').innerHTML = explanation;
 
             // Calculate exposure capacity (reverse calculation)
-            const contractsAffordable = result.totalAnnualContracts;
-            const maxPayoutPerContract = (spyPrice - Math.floor(spyPrice * (1 - strikeDistance / 100))) * 100;
-            const totalMaxPayout = maxPayoutPerContract * contractsAffordable;
-            const maxPortfolioAtTargetCoverage = totalMaxPayout / (result.coveragePercent / 100);
+            // Max payout from your annual contracts
+            const strikePrice = Math.floor(spyPrice * (1 - strikeDistance / 100));
+            const maxPayoutPerContract = (spyPrice - strikePrice) * 100;
+            const totalMaxPayout = maxPayoutPerContract * result.totalAnnualContracts;
+
+            // At strike distance, portfolio loss = portfolio × (strike distance %)
+            // For 50% coverage: payout = 0.5 × loss = 0.5 × portfolio × (strike distance %)
+            // So: max portfolio = payout / (0.5 × strike distance %)
+            const targetCoverage = 50; // Target 50% coverage
+            const maxPortfolioAt50Coverage = totalMaxPayout / (targetCoverage / 100 * strikeDistance / 100);
 
             const exposureCapacity = `
-                Your annual budget of $${result.totalAnnualCost.toFixed(0)} buys ${contractsAffordable} contracts/year.<br>
-                At ${strikeDistance}% OTM, max payout: $${totalMaxPayout.toLocaleString()}<br>
+                Annual budget: $${result.totalAnnualCost.toFixed(0)} → ${result.totalAnnualContracts} contracts<br>
+                Max payout at ${strikeDistance}% drop: $${totalMaxPayout.toLocaleString()}<br>
                 <br>
-                To maintain ${result.coveragePercent.toFixed(0)}% coverage, max portfolio: <strong>$${maxPortfolioAtTargetCoverage.toLocaleString()}</strong><br>
-                ${portfolio > maxPortfolioAtTargetCoverage
-                    ? `<span style="color: #f59e0b;">⚠️ Your current portfolio ($${portfolio.toLocaleString()}) exceeds this. Consider increasing budget.</span>`
-                    : `<span style="color: #10b981;">✓ Your current portfolio ($${portfolio.toLocaleString()}) is within capacity.</span>`
+                Max portfolio for ${targetCoverage}% coverage: <strong>$${maxPortfolioAt50Coverage.toLocaleString()}</strong><br>
+                ${portfolio > maxPortfolioAt50Coverage
+                    ? `<span style="color: #f59e0b;">⚠️ Current portfolio ($${portfolio.toLocaleString()}) exceeds this.</span>`
+                    : `<span style="color: #10b981;">✓ Current portfolio ($${portfolio.toLocaleString()}) is within capacity.</span>`
                 }
             `;
 
