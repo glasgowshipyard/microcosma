@@ -698,10 +698,12 @@
                 Annual budget: $${result.totalAnnualCost.toFixed(0)} → ${result.totalAnnualContracts} contracts<br>
                 Max payout at ${strikeDistance}% drop: $${totalMaxPayout.toLocaleString()}<br>
                 <br>
-                Max portfolio for ${targetCoverage}% coverage: <strong>$${maxPortfolioAt50Coverage.toLocaleString()}</strong><br>
+                <strong>Portfolio size for ${targetCoverage}% coverage: $${maxPortfolioAt50Coverage.toLocaleString()}</strong><br>
                 ${portfolio > maxPortfolioAt50Coverage
-                    ? `<span style="color: #f59e0b;">⚠️ Current portfolio ($${portfolio.toLocaleString()}) exceeds this.</span>`
-                    : `<span style="color: #10b981;">✓ Current portfolio ($${portfolio.toLocaleString()}) is within capacity.</span>`
+                    ? `<span style="color: #f59e0b;">⚠️ Over-insured. Current ($${portfolio.toLocaleString()}) is ${((portfolio/maxPortfolioAt50Coverage)*100).toFixed(0)}% of target.<br>Options: Scale up to $${maxPortfolioAt50Coverage.toLocaleString()} OR cut budget to $${((result.totalAnnualCost * portfolio / maxPortfolioAt50Coverage)).toFixed(0)}/year</span>`
+                    : portfolio < maxPortfolioAt50Coverage * 0.5
+                    ? `<span style="color: #f59e0b;">⚠️ Under-insured. Current ($${portfolio.toLocaleString()}) is ${((portfolio/maxPortfolioAt50Coverage)*100).toFixed(0)}% of target.<br>Option: Increase budget to ~$${((result.totalAnnualCost * maxPortfolioAt50Coverage / portfolio)).toFixed(0)}/year</span>`
+                    : `<span style="color: #10b981;">✓ In range. Portfolio is ${((portfolio/maxPortfolioAt50Coverage)*100).toFixed(0)}% of ${targetCoverage}% coverage target.</span>`
                 }
             `;
 
